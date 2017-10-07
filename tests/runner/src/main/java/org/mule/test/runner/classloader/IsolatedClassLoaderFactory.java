@@ -21,7 +21,6 @@ import static org.mule.runtime.core.api.config.MuleProperties.MULE_LOG_VERBOSE_C
 import static org.mule.runtime.deployment.model.internal.DefaultRegionPluginClassLoadersFactory.getArtifactPluginId;
 import static org.mule.runtime.module.artifact.api.classloader.ParentFirstLookupStrategy.PARENT_FIRST;
 import static org.slf4j.LoggerFactory.getLogger;
-
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.container.api.MuleModule;
 import org.mule.runtime.container.internal.ContainerClassLoaderFactory;
@@ -105,8 +104,8 @@ public class IsolatedClassLoaderFactory {
   public ArtifactClassLoaderHolder createArtifactClassLoader(List<String> extraBootPackages,
                                                              Set<String> extraPrivilegedArtifacts,
                                                              ArtifactsUrlClassification artifactsUrlClassification) {
-    JarInfo testJarInfo = getTestJarInfo(artifactsUrlClassification);
     Map<String, LookupStrategy> appExportedLookupStrategies = new HashMap<>();
+    JarInfo testJarInfo = getAppSharedPackages(artifactsUrlClassification.getPluginSharedLibUrls());
     testJarInfo.getPackages().stream().forEach(p -> appExportedLookupStrategies.put(p, PARENT_FIRST));
 
     ArtifactClassLoader containerClassLoader;
@@ -147,6 +146,12 @@ public class IsolatedClassLoaderFactory {
                                 childClassLoaderLookupPolicy);
 
       if (!artifactsUrlClassification.getPluginUrlClassifications().isEmpty()) {
+        // TODO(pablo.kraan): runner - clean up this shit
+        createTestRunnerPlugin(artifactsUrlClassification, appExportedLookupStrategies, childClassLoaderLookupPolicy,
+                               regionClassLoader, filteredPluginsArtifactClassLoaders, pluginsArtifactClassLoaders,
+                               pluginArtifactClassLoaderFilters, moduleRepository, testContainerClassLoaderFactory);
+
+
         for (PluginUrlClassification pluginUrlClassification : artifactsUrlClassification.getPluginUrlClassifications()) {
           logClassLoaderUrls("PLUGIN (" + pluginUrlClassification.getName() + ")", pluginUrlClassification.getUrls());
 
@@ -171,7 +176,7 @@ public class IsolatedClassLoaderFactory {
           pluginsArtifactClassLoaders.add(pluginCL);
 
           ArtifactClassLoaderFilter filter =
-              createArtifactClassLoaderFilter(pluginUrlClassification, testJarInfo.getPackages(), childClassLoaderLookupPolicy);
+              createArtifactClassLoaderFilter(pluginUrlClassification, emptySet(), childClassLoaderLookupPolicy);
 
           pluginArtifactClassLoaderFilters.add(filter);
           filteredPluginsArtifactClassLoaders.add(new FilteringArtifactClassLoader(pluginCL, filter, emptyList()));
@@ -194,6 +199,77 @@ public class IsolatedClassLoaderFactory {
       return new ArtifactClassLoaderHolder(containerClassLoader, serviceArtifactClassLoaders, pluginsArtifactClassLoaders,
                                            appClassLoader);
     }
+  }
+
+  // TODO(pablo.kraan): runner - remove duplication
+  private JarInfo getAppSharedPackages(List<URL> pluginSharedLibUrls) {
+    List<URL> libraries = newArrayList();
+    libraries.addAll(pluginSharedLibUrls);
+
+    Set<String> packages = new HashSet<>();
+    Set<String> resources = new HashSet<>();
+    final JarExplorer jarExplorer = new FileJarExplorer();
+
+    for (URL library : libraries) {
+      try {
+        JarInfo jarInfo = jarExplorer.explore(library.toURI());
+        packages.addAll(jarInfo.getPackages());
+        resources.addAll(jarInfo.getResources());
+      } catch (URISyntaxException e) {
+        throw new MuleRuntimeException(e);
+      }
+    }
+
+    return new JarInfo(packages, resources);
+  }
+
+  private void createTestRunnerPlugin(ArtifactsUrlClassification artifactsUrlClassification,
+                                      Map<String, LookupStrategy> appExportedLookupStrategies,
+                                      ClassLoaderLookupPolicy childClassLoaderLookupPolicy, RegionClassLoader regionClassLoader,
+                                      List<ArtifactClassLoader> filteredPluginsArtifactClassLoaders,
+                                      List<ArtifactClassLoader> pluginsArtifactClassLoaders,
+                                      List<ArtifactClassLoaderFilter> pluginArtifactClassLoaderFilters,
+                                      DefaultModuleRepository moduleRepository,
+                                      TestContainerClassLoaderFactory testContainerClassLoaderFactory) {
+    // TODO(pablo.kraan): runner - find the right URL for the module. Check that works for test jars
+    //URL url;
+    //try {
+    //  url = new URL("file:/Users/pablokraan/devel/workspaces/mule-uber1/mule-ee/modules/batch/target/test-classes/");
+    //} catch (MalformedURLException e) {
+    //  throw new IllegalArgumentException("Wrong URL");
+    //}
+
+    JarInfo testJarInfo = getTestJarInfo(artifactsUrlClassification);
+
+    String testRunnerArtifactId = getArtifactPluginId(regionClassLoader.getArtifactId(), "test-runner");
+
+    PluginUrlClassification testRunnerPluginClassification =
+        new PluginUrlClassification("test-runner", emptyList(), emptyList(), emptyList(), testJarInfo.getPackages(),
+                                    testJarInfo.getResources(), emptySet(), emptySet());
+
+    ClassLoaderLookupPolicy pluginLookupPolicy =
+        extendLookupPolicyForPrivilegedAccess(childClassLoaderLookupPolicy, moduleRepository,
+                                              testContainerClassLoaderFactory,
+                                              testRunnerPluginClassification);
+    pluginLookupPolicy = pluginLookupPolicy.extend(appExportedLookupStrategies);
+
+    MuleArtifactClassLoader pluginCL =
+        new MuleArtifactClassLoader(testRunnerArtifactId,
+                                    new ArtifactDescriptor(testRunnerPluginClassification.getName()),
+                                    artifactsUrlClassification.getApplicationUrls().toArray(new URL[0]),
+                                    regionClassLoader,
+                                    pluginLookupPolicyGenerator.createLookupPolicy(testRunnerPluginClassification,
+                                                                                   artifactsUrlClassification
+                                                                                       .getPluginUrlClassifications(),
+                                                                                   pluginLookupPolicy,
+                                                                                   pluginsArtifactClassLoaders));
+    pluginsArtifactClassLoaders.add(pluginCL);
+
+    ArtifactClassLoaderFilter filter =
+        createArtifactClassLoaderFilter(testRunnerPluginClassification, testJarInfo.getPackages(), childClassLoaderLookupPolicy);
+
+    pluginArtifactClassLoaderFilters.add(filter);
+    filteredPluginsArtifactClassLoaders.add(new FilteringArtifactClassLoader(pluginCL, filter, emptyList()));
   }
 
   private ClassLoaderLookupPolicy extendLookupPolicyForPrivilegedAccess(ClassLoaderLookupPolicy childClassLoaderLookupPolicy,
@@ -220,6 +296,10 @@ public class IsolatedClassLoaderFactory {
   }
 
   private boolean hasPrivilegedApiAccess(PluginUrlClassification pluginUrlClassification, MuleModule module) {
+    // TODO(pablo.kraan): runner - fix this hack
+    if (pluginUrlClassification.getName().contains("test-runner")) {
+      return true;
+    }
     return module.getPrivilegedArtifacts().stream()
         .filter(artifact -> pluginUrlClassification.getName().startsWith(artifact + ":")).findFirst().isPresent();
   }
@@ -296,7 +376,7 @@ public class IsolatedClassLoaderFactory {
 
   private JarInfo getTestCodePackages(ArtifactsUrlClassification artifactsUrlClassification, URL testCodeUrl) {
     List<URL> libraries = newArrayList(testCodeUrl);
-    libraries.addAll(artifactsUrlClassification.getPluginSharedLibUrls());
+    //libraries.addAll(artifactsUrlClassification.getPluginSharedLibUrls());
 
     Set<String> packages = new HashSet<>();
     Set<String> resources = new HashSet<>();
@@ -430,13 +510,13 @@ public class IsolatedClassLoaderFactory {
               + containerProvidedPackages);
     }
 
-    Set<String> appProvidedPackages =
-        parentExportedPackages.stream().filter(p -> exportedPackages.contains(p)).collect(toSet());
-    if (!appProvidedPackages.isEmpty()) {
-      exportedPackages.removeAll(appProvidedPackages);
-      LOGGER.warn("Exported packages from plugin '" + pluginUrlClassification.getName() + "' are provided by the artifact owner: "
-          + appProvidedPackages);
-    }
+    //Set<String> appProvidedPackages =
+    //    parentExportedPackages.stream().filter(p -> exportedPackages.contains(p)).collect(toSet());
+    //if (!appProvidedPackages.isEmpty()) {
+    //  exportedPackages.removeAll(appProvidedPackages);
+    //  LOGGER.warn("Exported packages from plugin '" + pluginUrlClassification.getName() + "' are provided by the artifact owner: "
+    //      + appProvidedPackages);
+    //}
     return exportedPackages;
   }
 
@@ -456,9 +536,10 @@ public class IsolatedClassLoaderFactory {
     logClassLoaderUrls("APP", artifactsUrlClassification.getApplicationUrls());
     return new MuleApplicationClassLoader(APP_NAME, new ArtifactDescriptor(APP_NAME), parent,
                                           new DefaultNativeLibraryFinderFactory()
-                                              .create(APP_NAME, artifactsUrlClassification.getApplicationUrls()
+                                              .create(APP_NAME, artifactsUrlClassification.getPluginSharedLibUrls()
                                                   .toArray(new URL[pluginsArtifactClassLoaders.size()])),
-                                          artifactsUrlClassification.getApplicationUrls(),
+                                          artifactsUrlClassification.getApplicationUrls()
+                                              .subList(1, artifactsUrlClassification.getApplicationUrls().size() - 1),
                                           childClassLoaderLookupPolicy, pluginsArtifactClassLoaders);
   }
 

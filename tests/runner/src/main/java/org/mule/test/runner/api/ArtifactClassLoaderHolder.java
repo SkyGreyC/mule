@@ -60,4 +60,15 @@ public final class ArtifactClassLoaderHolder {
     return applicationClassLoader.getClassLoader().loadClass(name);
   }
 
+  public Class<?> loadClassWithATestRunnerClassLoader(String name) throws ClassNotFoundException {
+    ArtifactClassLoader classLoader = getTestRunnerPluginClassLoader();
+    return classLoader.getClassLoader().loadClass(name);
+  }
+
+  private ArtifactClassLoader getTestRunnerPluginClassLoader() {
+    return pluginsArtifactClassLoaders.stream().filter(cl -> cl.getArtifactId().equals("Region/plugin/test-runner")).findFirst()
+        .orElseThrow(() -> new IllegalStateException("No test runner plugin found"));
+  }
+
+
 }

@@ -140,9 +140,12 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
       checkConfiguration(clazz);
     }
 
+    // TODO(pablo.kraan): runner - isolated test class must be loaded from the plugin
     final Class<?> isolatedTestClass = getTestClass(clazz);
+
+    // TODO(pablo.kraan): runner - runner class must be loaded from the plugin
     final Class<? extends Annotation> runnerDelegateToClass = (Class<? extends Annotation>) artifactClassLoaderHolder
-        .loadClassWithApplicationClassLoader(RunnerDelegateTo.class.getName());
+        .loadClassWithATestRunnerClassLoader(RunnerDelegateTo.class.getName());
 
     delegate = new AnnotatedBuilder(builder)
         .buildRunner(getAnnotationAttributeFrom(isolatedTestClass, runnerDelegateToClass, "value"), isolatedTestClass);
@@ -153,9 +156,11 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
     withContextClassLoader(artifactClassLoaderHolder.getApplicationClassLoader().getClassLoader(), () -> {
       try {
         if (!staticFieldsInjected) {
+
           injectPluginsClassLoaders(artifactClassLoaderHolder, isolatedTestClass);
           injectServicesClassLoaders(artifactClassLoaderHolder, isolatedTestClass);
           injectContainerClassLoader(artifactClassLoaderHolder, isolatedTestClass);
+          injectApplicationClassLoader(artifactClassLoaderHolder, isolatedTestClass);
         }
       } catch (Throwable t) {
         errorWhileSettingClassLoaders = t;
@@ -345,6 +350,21 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
     doFieldInjection(containerClassLoaderAwareClass, method, valueToInject, expectedParamType);
   }
 
+  private static void injectApplicationClassLoader(ArtifactClassLoaderHolder artifactClassLoaderHolder,
+                                                   Class<?> isolatedTestClass)
+      throws Throwable {
+    final Class<ApplicationClassLoaderAware> applicationClassLoaderAwareClass = ApplicationClassLoaderAware.class;
+    final String expectedParamType = ArtifactClassLoader.class.getName();
+    final FrameworkMethod method = getAnnotatedMethod(artifactClassLoaderHolder, isolatedTestClass,
+                                                      applicationClassLoaderAwareClass, expectedParamType);
+    final Object applicationClassLoader = artifactClassLoaderHolder.getApplicationClassLoader();
+    //final Field artifactClassLoaderField =
+    //    applicationClassLoader.getClass().getSuperclass().getDeclaredField("artifactClassLoader");
+    //artifactClassLoaderField.setAccessible(true);
+    //final Object valueToInject = artifactClassLoaderField.get(applicationClassLoader);
+    doFieldInjection(applicationClassLoaderAwareClass, method, applicationClassLoader, expectedParamType);
+  }
+
   private static void doFieldInjection(Class<? extends Annotation> containerClassLoaderAwareClass, FrameworkMethod method,
                                        Object value, String expectedParamType)
       throws Throwable {
@@ -365,7 +385,7 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
       throws ClassNotFoundException {
     TestClass testClass = new TestClass(isolatedTestClass);
     Class<? extends Annotation> artifactContextAwareAnn = (Class<? extends Annotation>) artifactClassLoaderHolder
-        .loadClassWithApplicationClassLoader(annotationClass.getName());
+        .loadClassWithATestRunnerClassLoader(annotationClass.getName());
     List<FrameworkMethod> contextAwareMethods = testClass.getAnnotatedMethods(artifactContextAwareAnn);
     if (contextAwareMethods.size() != 1) {
       throw new IllegalStateException("Isolation tests need to have one method marked with annotation "
@@ -381,7 +401,7 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
 
   private Class<?> getTestClass(Class<?> clazz) throws InitializationError {
     try {
-      return artifactClassLoaderHolder.loadClassWithApplicationClassLoader(clazz.getName());
+      return artifactClassLoaderHolder.loadClassWithATestRunnerClassLoader(clazz.getName());
     } catch (Exception e) {
       throw new InitializationError(e);
     }

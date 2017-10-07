@@ -30,6 +30,7 @@
         <module>runner</module>
         <module>integration</module>
         <module>parsers-plugin</module>
+        <module>runner-plugin</module>
     </modules>
 
     <build>

@@ -1,0 +1,18 @@
+{
+  "name": "Mule Test Runner Plugin",
+  "minMuleVersion": "4.0.0",
+  "requiredProduct": "MULE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {
+      "exportedPackages": [
+      ],
+      "exportedResources": [
+      ]
+    }
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}
