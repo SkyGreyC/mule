@@ -47,6 +47,16 @@
         <module>extensions-soap-support</module>
     </modules>
 
+    <!--<dependencies>-->
+        <!--&lt;!&ndash;// TODO(pablo.kraan): runner - why do I need this &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.mule.tests</groupId>-->
+            <!--<artifactId>mule-tests-model</artifactId>-->
+            <!--<version>${project.version}</version>-->
+            <!--<scope>test</scope>-->
+        <!--</dependency>-->
+    <!--</dependencies>-->
+
     <build>
         <plugins>
             <plugin>

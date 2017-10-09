@@ -45,12 +45,15 @@ import javax.inject.Inject;
     testInclusions = {
         "*:*:jar:tests:*",
         "*:*:test-jar:*:*"
-    },
-    sharedRuntimeLibs = {
-        "org.mule.tests:mule-tests-unit",
-        // TODO(pablo.kraan): runner - added to let plugin to access runner classes
-        "org.mule.tests:mule-tests-runner"
-    })
+    }
+//,
+//sharedRuntimeLibs = {
+//    "org.mule.tests:mule-tests-model"
+////    "org.mule.tests:mule-tests-unit",
+////    // TODO(pablo.kraan): runner - added to let plugin to access runner classes
+////    "org.mule.tests:mule-tests-runner"
+//}
+)
 public abstract class MuleArtifactFunctionalTestCase extends ArtifactFunctionalTestCase {
 
   @Inject

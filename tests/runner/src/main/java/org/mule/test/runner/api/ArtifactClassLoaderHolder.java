@@ -65,7 +65,7 @@ public final class ArtifactClassLoaderHolder {
     return classLoader.getClassLoader().loadClass(name);
   }
 
-  private ArtifactClassLoader getTestRunnerPluginClassLoader() {
+  public ArtifactClassLoader getTestRunnerPluginClassLoader() {
     return pluginsArtifactClassLoaders.stream().filter(cl -> cl.getArtifactId().equals("Region/plugin/test-runner")).findFirst()
         .orElseThrow(() -> new IllegalStateException("No test runner plugin found"));
   }

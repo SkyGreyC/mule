@@ -153,7 +153,7 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
     if (staticFieldsInjected && errorWhileSettingClassLoaders != null) {
       throw Throwables.propagate(errorWhileSettingClassLoaders);
     }
-    withContextClassLoader(artifactClassLoaderHolder.getApplicationClassLoader().getClassLoader(), () -> {
+    withContextClassLoader(artifactClassLoaderHolder.getTestRunnerPluginClassLoader().getClassLoader(), () -> {
       try {
         if (!staticFieldsInjected) {
 
@@ -423,7 +423,8 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
    */
   @Override
   public void run(RunNotifier notifier) {
-    withContextClassLoader(artifactClassLoaderHolder.getApplicationClassLoader().getClassLoader(), () -> delegate.run(notifier));
+    withContextClassLoader(artifactClassLoaderHolder.getTestRunnerPluginClassLoader().getClassLoader(),
+                           () -> delegate.run(notifier));
   }
 
   /**
