@@ -11,14 +11,12 @@ import static java.util.Collections.emptySet;
 import static org.mule.runtime.api.dsl.DslResolvingContext.getDefault;
 import static org.mule.runtime.core.api.util.ClassUtils.withContextClassLoader;
 import static org.mule.runtime.deployment.model.api.plugin.ArtifactPluginDescriptor.MULE_AUTO_GENERATED_ARTIFACT_PATH_INSIDE_JAR;
-import static org.mule.test.runner.api.MulePluginBasedLoaderFinder.META_INF_MULE_PLUGIN;
 import org.mule.runtime.api.lifecycle.InitialisationException;
 import org.mule.runtime.api.meta.model.ExtensionModel;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.config.builders.AbstractConfigurationBuilder;
 import org.mule.runtime.core.api.extension.ExtensionManager;
 import org.mule.runtime.core.api.util.func.CheckedRunnable;
-import org.mule.runtime.deployment.model.api.plugin.ArtifactPluginDescriptor;
 import org.mule.runtime.module.artifact.api.classloader.ArtifactClassLoader;
 import org.mule.runtime.module.extension.api.manager.DefaultExtensionManagerFactory;
 import org.mule.runtime.module.extension.api.manager.ExtensionManagerFactory;
@@ -119,11 +117,13 @@ public class IsolatedClassLoaderExtensionsManagerConfigurationBuilder extends Ab
                   finder.getLoader().loadExtensionModel(classLoader, getDefault(emptySet()), finder.getParams());
               extensionModels.add(extension);
             } else {
+              // TODO(pablo.kraan): runner - why this message is logged for the test-runner
               LOGGER
                   .debug("Discarding plugin with artifactName '{}' as it doesn't have an ExtensionModelLoaderDescriptor defined",
                          artifactName);
             }
           } else {
+            // TODO(pablo.kraan): runner - why this message is logged for the test-runner
             LOGGER.debug("Discarding plugin with artifactName '{}' as it doesn't have a mule-artifact.json", artifactName);
           }
         });

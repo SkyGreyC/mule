@@ -242,10 +242,40 @@ public class IsolatedClassLoaderFactory {
     List<String> pluginDependencies =
         artifactsUrlClassification.getPluginUrlClassifications().stream().map(p -> p.getName()).collect(toList());
 
+    Set<String> exportedPackages = testJarInfo.getPackages();
+    // TODO(pablo.kraan): runner - need to export every package from the test infrastructure
+    exportedPackages.add("org.mule.tck");
+    exportedPackages.add("org.mule.tck.util");
+    exportedPackages.add("org.mule.tck.junit4");
+    exportedPackages.add("org.mule.functional.security");
+    exportedPackages.add("org.mule.tck.junit4.matcher");
+    exportedPackages.add("org.mule.tck.processor");
+    exportedPackages.add("org.mule.tck.core.lifecycle");
+    exportedPackages.add("org.mule.functional.jndi");
+    exportedPackages.add("org.mule.test.core.context.notification.processors");
+    exportedPackages.add("org.mule.test.transformers");
+    exportedPackages.add("org.mule.tck.services");
+    exportedPackages.add("org.mule.test.integration.transformer.response");
+    exportedPackages.add("com.mulesoft.mule.compatibility.tck.model.transformer.simple");
+    exportedPackages.add("com.mulesoft.mule.compatibility.tck.model");
+
+    // TODO(pablo.kraan): runner - need to export every resource from the test module? (ex: tx test from ee use config from db module)
+    Set<String> exportedResources = testJarInfo.getResources();
+    exportedResources.add("/integration/config/derby-datasource.xml");
+    exportedResources.add("/integration/config/dynamic-derby-xa-pooling-db-config.xml");
+    exportedResources.add("/integration/xa/dynamic-xa-connection-pooling-config.xml");
+    exportedResources.add("/integration/config/derby-dynamic-minimum-pooling-db-config.xml");
+    exportedResources.add("/integration/config/derby-minimum-pooling-db-config.xml");
+    exportedResources.add("/integration/xa/xa-connection-pooling-config.xml");
+    exportedResources.add("/integration/config/derby-xa-pooling-db-config.xml");
+    // TODO(pablo.kraan): runner - used on compabitlity test
+    exportedResources.add("/org/mule/test/spring/security/secure-http-polling-client-flow.xml");
+
+
     PluginUrlClassification testRunnerPluginClassification =
         new PluginUrlClassification("test-runner", artifactsUrlClassification.getApplicationUrls(), emptyList(),
-                                    pluginDependencies, testJarInfo.getPackages(),
-                                    testJarInfo.getResources(), emptySet(), emptySet());
+                                    pluginDependencies, exportedPackages,
+                                    exportedResources, emptySet(), emptySet());
 
     ClassLoaderLookupPolicy pluginLookupPolicy =
         extendLookupPolicyForPrivilegedAccess(childClassLoaderLookupPolicy, moduleRepository,
