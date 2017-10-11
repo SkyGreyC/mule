@@ -17,10 +17,9 @@ import static org.mule.runtime.api.value.ValueProviderService.VALUE_PROVIDER_SER
 import static org.mule.runtime.config.internal.LazyConnectivityTestingService.NON_LAZY_CONNECTIVITY_TESTING_SERVICE;
 import static org.mule.runtime.config.internal.LazyMetadataService.NON_LAZY_METADATA_SERVICE;
 import static org.mule.runtime.config.internal.LazyValueProviderService.NON_LAZY_VALUE_PROVIDER_SERVICE;
-import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNeeded;
-import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.startIfNeeded;
 import static org.mule.runtime.core.api.util.ClassUtils.withContextClassLoader;
 import static org.mule.runtime.core.privileged.registry.LegacyRegistryUtils.unregisterObject;
+
 import org.mule.runtime.api.component.ConfigurationProperties;
 import org.mule.runtime.api.component.location.Location;
 import org.mule.runtime.api.connectivity.ConnectivityTestingService;
@@ -41,13 +40,14 @@ import org.mule.runtime.core.api.config.bootstrap.ArtifactType;
 import org.mule.runtime.core.internal.connectivity.DefaultConnectivityTestingService;
 import org.mule.runtime.core.internal.metadata.MuleMetadataService;
 import org.mule.runtime.core.internal.value.MuleValueProviderService;
+import org.mule.runtime.dsl.api.component.ComponentBuildingDefinition;
+import org.mule.runtime.dsl.api.component.config.DefaultComponentLocation;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.mule.runtime.dsl.api.component.config.DefaultComponentLocation;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -84,6 +84,7 @@ public class LazyMuleArtifactContext extends MuleArtifactContext implements Lazy
     super(muleContext, artifactConfigResources, artifactDeclaration, optionalObjectsController, artifactProperties,
           artifactType, pluginsClassLoaders, parentConfigurationProperties, disableXmlValidations);
     this.applicationModel.executeOnEveryMuleComponentTree(componentModel -> componentModel.setEnabled(false));
+    enableEagerComponents();
 
     muleContext.getCustomizationService().overrideDefaultServiceImpl(CONNECTIVITY_TESTING_SERVICE_KEY,
                                                                      new LazyConnectivityTestingService(this, () -> getRegistry()
@@ -208,6 +209,8 @@ public class LazyMuleArtifactContext extends MuleArtifactContext implements Lazy
       });
     }
     applicationModel.executeOnEveryMuleComponentTree(componentModel -> componentModel.setEnabled(false));
+    enableEagerComponents();
+
     // Refresh componentLocator
     removeFromComponentLocator(beanNames);
   }
@@ -219,4 +222,15 @@ public class LazyMuleArtifactContext extends MuleArtifactContext implements Lazy
     });
   }
 
+  private void enableEagerComponents() {
+    this.applicationModel.executeOnEveryComponentTree(componentModel -> {
+      Optional<ComponentBuildingDefinition<?>> buildingDefinition =
+          this.componentBuildingDefinitionRegistry.getBuildingDefinition(componentModel.getIdentifier());
+      buildingDefinition.ifPresent(definition -> {
+        if (definition.isAlwaysEnabled()) {
+          componentModel.setEnabled(true);
+        }
+      });
+    });
+  }
 }

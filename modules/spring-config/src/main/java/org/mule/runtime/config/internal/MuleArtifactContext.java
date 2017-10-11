@@ -401,7 +401,8 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
   private List<ConfigurableObjectProvider> lookObjectProviders() {
     List<ConfigurableObjectProvider> objectProviders = new ArrayList<>();
     applicationModel.executeOnEveryRootElement(componentModel -> {
-      if (componentModel.getType() != null && ConfigurableObjectProvider.class.isAssignableFrom(componentModel.getType())) {
+      if (componentModel.isEnabled() && componentModel.getType() != null
+          && ConfigurableObjectProvider.class.isAssignableFrom(componentModel.getType())) {
         objectProviders.add((ConfigurableObjectProvider) componentModel.getObjectInstance());
       }
     });
@@ -450,6 +451,8 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
 
   protected void createInitialApplicationComponents(DefaultListableBeanFactory beanFactory) {
     createApplicationComponents(beanFactory, applicationModel, true);
+    // This should only be done once at the initial application model creation, called from Spring
+    registerObjectFromObjectProviders(beanFactory);
   }
 
   @Override
@@ -497,7 +500,7 @@ public class MuleArtifactContext extends AbstractRefreshableConfigApplicationCon
         componentLocator.addComponentLocation(cm.getComponentLocation());
       }
     });
-    registerObjectFromObjectProviders(beanFactory);
+
     return createdComponentModels;
   }
 

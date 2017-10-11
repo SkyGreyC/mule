@@ -90,15 +90,7 @@ public class ModuleDelegatingEntityResolver implements EntityResolver {
                           systemId));
     }
 
-    Boolean useDeprecated = muleEntityResolver
-        .resolveEntity(publicId, "http://www.mulesoft.org/schema/mule/core/current/mule-core-deprecated.xsd") != null;
-    if (systemId.equals("http://www.mulesoft.org/schema/mule/core/current/mule.xsd")) {
-      if (useDeprecated) {
-        systemId = "http://www.mulesoft.org/schema/mule/core/current/mule-core-deprecated.xsd";
-      } else {
-        systemId = "http://www.mulesoft.org/schema/mule/core/current/mule-core.xsd";
-      }
-    }
+    systemId = overrideSystemIdForCompatibility(publicId, systemId);
 
     InputSource inputSource;
     inputSource = muleEntityResolver.resolveEntity(publicId, systemId);
@@ -116,6 +108,36 @@ public class ModuleDelegatingEntityResolver implements EntityResolver {
       }
     }
     return inputSource;
+  }
+
+  private String overrideSystemIdForCompatibility(String publicId, String systemId) throws SAXException, IOException {
+    final String CORE_XSD = "http://www.mulesoft.org/schema/mule/core/current/mule.xsd";
+    final String CORE_CURRENT_XSD = "http://www.mulesoft.org/schema/mule/core/current/mule-core.xsd";
+    final String CORE_DEPRECATED_XSD = "http://www.mulesoft.org/schema/mule/core/current/mule-core-deprecated.xsd";
+    final String COMPATIBILITY_XSD = "http://www.mulesoft.org/schema/mule/compatibility/current/mule-compatibility.xsd";
+
+    if (systemId.equals(CORE_XSD)) {
+      Boolean useDeprecated = muleEntityResolver.resolveEntity(publicId, CORE_DEPRECATED_XSD) != null;
+      Boolean usingCompatibility = muleEntityResolver.resolveEntity(publicId, COMPATIBILITY_XSD) != null;
+      Boolean runningTests = isRunningTests(Thread.currentThread().getStackTrace());
+
+      if (useDeprecated && (usingCompatibility || runningTests)) {
+        return CORE_DEPRECATED_XSD;
+      } else {
+        return CORE_CURRENT_XSD;
+      }
+    }
+
+    return systemId;
+  }
+
+  private Boolean isRunningTests(StackTraceElement[] stackTrace) {
+    for (StackTraceElement element : stackTrace) {
+      if (element.getClassName().startsWith("org.mule.test.runner")) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private InputSource generateFromExtensions(String publicId, String systemId) {
