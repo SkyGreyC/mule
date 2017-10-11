@@ -248,6 +248,8 @@ public class IsolatedClassLoaderFactory {
     exportedPackages.add("org.mule.tck.util");
     exportedPackages.add("org.mule.tck.junit4");
     exportedPackages.add("org.mule.functional.security");
+    // TODO(pablo.kraan): runner - used on a scripting test
+    exportedPackages.add("org.mule.functional.junit4");
     exportedPackages.add("org.mule.tck.junit4.matcher");
     exportedPackages.add("org.mule.tck.processor");
     exportedPackages.add("org.mule.tck.core.lifecycle");
