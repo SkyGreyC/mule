@@ -219,8 +219,8 @@ public class AetherClassPathClassifierTestCase extends AbstractMuleTestCase {
                                                     .thenReturn(newArrayList(fooCoreArtifactFile, fooToolsArtifactFile));
 
     URL url = temporaryFolder.newFile().toURI().toURL();
-    List<URL> appUrls = newArrayList(url);
-    when(context.getApplicationUrls()).thenReturn(appUrls);
+    List<URL> testRunnerUrls = newArrayList(url);
+    when(context.getTestRunnerPluginUrls()).thenReturn(testRunnerUrls);
 
     ArtifactsUrlClassification classification = classifier.classify(context);
 
@@ -242,7 +242,7 @@ public class AetherClassPathClassifierTestCase extends AbstractMuleTestCase {
                                                    argThat(instanceOf(DependencyFilter.class)),
                                                    argThat(equalTo(emptyList())));
     verify(artifactClassificationTypeResolver).resolveArtifactClassificationType(rootArtifact);
-    verify(context, atLeastOnce()).getApplicationUrls();
+    verify(context, atLeastOnce()).getTestRunnerPluginUrls();
     verify(rootArtifactResult).getArtifact();
   }
 
@@ -255,7 +255,7 @@ public class AetherClassPathClassifierTestCase extends AbstractMuleTestCase {
     when(artifactDescriptorResult.getRepositories()).thenReturn(emptyList());
     when(dependencyResolver.readArtifactDescriptor(any(Artifact.class))).thenReturn(artifactDescriptorResult);
 
-    when(context.getSharedPluginLibCoordinates()).thenReturn(newArrayList("org.foo.tools:foo-repository"));
+    when(context.getApplicationSharedLibCoordinates()).thenReturn(newArrayList("org.foo.tools:foo-repository"));
     expectedException.expect(IllegalStateException.class);
     expectedException.expectMessage(containsString("has to be declared"));
     expectedException.expectMessage(containsString(TEST));
@@ -271,7 +271,7 @@ public class AetherClassPathClassifierTestCase extends AbstractMuleTestCase {
     when(artifactDescriptorResult.getRepositories()).thenReturn(emptyList());
     when(dependencyResolver.readArtifactDescriptor(any(Artifact.class))).thenReturn(artifactDescriptorResult);
 
-    when(context.getSharedPluginLibCoordinates()).thenReturn(newArrayList("foo-repository"));
+    when(context.getApplicationSharedLibCoordinates()).thenReturn(newArrayList("foo-repository"));
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage(containsString("not a valid format"));
     classifier.classify(context);
@@ -286,7 +286,7 @@ public class AetherClassPathClassifierTestCase extends AbstractMuleTestCase {
     directDependencies.add(derbyDriverDep);
     when(dependencyResolver.getDirectDependencies(rootArtifact)).thenReturn(directDependencies);
 
-    when(context.getSharedPluginLibCoordinates())
+    when(context.getApplicationSharedLibCoordinates())
         .thenReturn(newArrayList(derbyDriverDep.getArtifact().getGroupId() + ":" + derbyDriverDep.getArtifact().getArtifactId()));
 
     File rootArtifactFile = temporaryFolder.newFile();

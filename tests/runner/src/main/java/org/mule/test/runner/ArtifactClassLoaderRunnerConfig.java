@@ -59,7 +59,7 @@ public @interface ArtifactClassLoaderRunnerConfig {
    *
    * @return array of {@link String} to define runtime libraries in order to be added as shared libraries.
    */
-  String[] sharedRuntimeLibs() default {};
+  String[] applicationSharedRuntimeLibs() default {};
 
   /**
    * <b>WARNING: do not use this if you want to have a pure isolated test case.</b>

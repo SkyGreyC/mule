@@ -154,8 +154,10 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     } catch (ArtifactDescriptorException e) {
       throw new IllegalStateException("Couldn't read rootArtifact descriptor", e);
     }
-    List<URL> applicationLibUrls = buildApplicationLibClassification(context, directDependencies, remoteRepositories);
-    List<URL> pluginSharedLibUrls = buildPluginSharedLibClassification(context, directDependencies, remoteRepositories);
+    List<URL> applicationSharedLibUrls = buildPluginSharedLibClassification(context, directDependencies, remoteRepositories);
+    List<URL> testRunnerLibUrls = buildTestRunnerPluginClassification(context, directDependencies, remoteRepositories);
+    testRunnerLibUrls.removeAll(applicationSharedLibUrls);
+
     List<PluginUrlClassification> pluginUrlClassifications =
         buildPluginUrlClassifications(context, directDependencies, rootArtifactType, remoteRepositories);
 
@@ -168,8 +170,8 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     List<URL> applicationUrls =
         buildApplicationUrlClassification(context, directDependencies, rootArtifactType, remoteRepositories);
 
-    return new ArtifactsUrlClassification(containerUrls, serviceUrlClassifications, pluginSharedLibUrls, pluginUrlClassifications,
-                                          applicationUrls, applicationLibUrls);
+    return new ArtifactsUrlClassification(containerUrls, serviceUrlClassifications, applicationSharedLibUrls, pluginUrlClassifications,
+                                          applicationUrls, testRunnerLibUrls);
   }
 
   /**
@@ -219,7 +221,7 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
                                                        final List<RemoteRepository> rootArtifactRemoteRepositories) {
     List<URL> pluginSharedLibUrls = newArrayList();
 
-    List<Dependency> pluginSharedLibDependencies = context.getSharedPluginLibCoordinates().stream()
+    List<Dependency> pluginSharedLibDependencies = context.getApplicationSharedLibCoordinates().stream()
         .map(sharedPluginLibCoords -> findPluginSharedLibArtifact(sharedPluginLibCoords, context.getRootArtifact(),
                                                                   directDependencies))
         .collect(toList());
@@ -245,9 +247,9 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     return pluginSharedLibUrls;
   }
 
-  private List<URL> buildApplicationLibClassification(final ClassPathClassifierContext context,
-                                                      final List<Dependency> directDependencies,
-                                                      final List<RemoteRepository> rootArtifactRemoteRepositories) {
+  private List<URL> buildTestRunnerPluginClassification(final ClassPathClassifierContext context,
+                                                        final List<Dependency> directDependencies,
+                                                        final List<RemoteRepository> rootArtifactRemoteRepositories) {
     List<URL> applicationLibUrls = newArrayList();
 
     List<Dependency> applicationLibDependencies = context.getApplicationLibCoordinates().stream()
@@ -792,7 +794,6 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
                                                       List<Dependency> directDependencies,
                                                       ArtifactClassificationType rootArtifactType,
                                                       List<RemoteRepository> rootArtifactRemoteRepositories) {
-    // TODO(pablo.kraan): runner - remove the URLs that were defined as application or shared libs
     logger.debug("Building application classification");
     Artifact rootArtifact = context.getRootArtifact();
 
@@ -838,7 +839,7 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
             return toTransform.setScope(PROVIDED);
           }
           Artifact artifact = toTransform.getArtifact();
-          if (context.getSharedPluginLibCoordinates().contains(artifact.getGroupId() + ":" + artifact.getArtifactId())) {
+          if (context.getApplicationSharedLibCoordinates().contains(artifact.getGroupId() + ":" + artifact.getArtifactId())) {
             return toTransform.setScope(COMPILE);
           }
           return toTransform;
@@ -880,8 +881,8 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     }
 
     List<URL> appUrls = newArrayList(toUrl(appFiles));
-    logger.debug("Appending URLs to application: {}", context.getApplicationUrls());
-    appUrls.addAll(context.getApplicationUrls());
+    logger.debug("Appending URLs to test runner plugin: {}", context.getTestRunnerPluginUrls());
+    appUrls.addAll(context.getTestRunnerPluginUrls());
 
     resolveSnapshotVersionsToTimestampedFromClassPath(appUrls, context.getClassPathURLs());
 

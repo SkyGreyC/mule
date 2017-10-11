@@ -202,7 +202,7 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
 
     builder.setExportPluginClasses(runnerConfiguration.getExportPluginClasses());
 
-    builder.setSharedPluginLibCoordinates(runnerConfiguration.getSharedRuntimeLibs());
+    builder.setApplicationSharedLibCoordinates(runnerConfiguration.getSharedApplicationRuntimeLibs());
     builder.setApplicationLibCoordinates(runnerConfiguration.getApplicationRuntimeLibs());
     builder.setExtensionMetadataGeneration(true);
 

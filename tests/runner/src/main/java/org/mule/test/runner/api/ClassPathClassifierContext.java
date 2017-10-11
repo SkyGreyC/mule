@@ -42,12 +42,12 @@ public class ClassPathClassifierContext {
 
   private final List<String> extraBootPackages = newArrayList();
 
-  private final List<String> sharedPluginLibCoordinates = newArrayList();
+  private final List<String> applicationSharedLibCoordinates = newArrayList();
   private final List<String> applicationLibCoordinates = newArrayList();
   private final List<Class> exportPluginClasses = newArrayList();
   private final List<String> excludedArtifacts = newArrayList();
 
-  private final List<URL> applicationUrls = newArrayList();
+  private final List<URL> testRunnerPluginUrls = newArrayList();
 
   private boolean extensionMetadataGenerationEnabled = false;
   private File pluginResourcesFolder;
@@ -68,11 +68,11 @@ public class ClassPathClassifierContext {
    *        {@code [groupId]:[artifactId]:[extension]:[classifier]:[version]}.
    * @param testInclusions {@link List} of Maven coordinates to be included in application class loader. In format
    *        {@code [groupId]:[artifactId]:[extension]:[classifier]:[version]}.
-   * @param sharedPluginLibCoordinates {@link List} of Maven coordinates in format {@code <groupId>:<artifactId>} in order to be
+   * @param applicationSharedLibCoordinates {@link List} of Maven coordinates in format {@code <groupId>:<artifactId>} in order to be
    *        added to the sharedLib {@link ArtifactClassLoader}
    * @param exportPluginClasses {@link List} of {@link Class} to be exported in addition to the ones already exported by the
    *        plugin, for testing purposes only.
-   * @param applicationUrls {@link List} of {@link URL}s to be appended to the application
+   * @param testRunnerPluginUrls {@link List} of {@link URL}s to be appended to the application
    *        {@link ArtifactClassLoader}
    * @param extensionMetadataGenerationEnabled if while building the a plugin
    *        {@link ArtifactClassLoader} for an
@@ -88,9 +88,9 @@ public class ClassPathClassifierContext {
                                     final Set<String> providedExclusions,
                                     final Set<String> testExclusions,
                                     final Set<String> testInclusions,
-                                    final Set<String> sharedPluginLibCoordinates,
+                                    final Set<String> applicationSharedLibCoordinates,
                                     final Set<Class> exportPluginClasses,
-                                    final List<URL> applicationUrls,
+                                    final List<URL> testRunnerPluginUrls,
                                     final boolean extensionMetadataGenerationEnabled,
                                     Set<String> applicationLibCoordinates)
       throws IOException {
@@ -110,10 +110,10 @@ public class ClassPathClassifierContext {
     this.testInclusions.addAll(testInclusions);
 
     this.applicationLibCoordinates.addAll(applicationLibCoordinates);
-    this.sharedPluginLibCoordinates.addAll(sharedPluginLibCoordinates);
+    this.applicationSharedLibCoordinates.addAll(applicationSharedLibCoordinates);
     this.exportPluginClasses.addAll(exportPluginClasses);
 
-    this.applicationUrls.addAll(applicationUrls);
+    this.testRunnerPluginUrls.addAll(testRunnerPluginUrls);
 
     this.extensionMetadataGenerationEnabled = extensionMetadataGenerationEnabled;
   }
@@ -202,8 +202,8 @@ public class ClassPathClassifierContext {
    * @return {@link List} of Maven coordinates in format {@code <groupId>:<artifactId>} in order to be added to the sharedLib
    *         {@link ArtifactClassLoader}
    */
-  public List<String> getSharedPluginLibCoordinates() {
-    return this.sharedPluginLibCoordinates;
+  public List<String> getApplicationSharedLibCoordinates() {
+    return this.applicationSharedLibCoordinates;
   }
 
   // TODO(pablo.kraan): runner - add javadoc
@@ -215,8 +215,8 @@ public class ClassPathClassifierContext {
    * @return {@link List} of {@link URL}s to be appended to the application
    *         {@link ArtifactClassLoader} in addition to the ones classified.
    */
-  public List<URL> getApplicationUrls() {
-    return this.applicationUrls;
+  public List<URL> getTestRunnerPluginUrls() {
+    return this.testRunnerPluginUrls;
   }
 
   /**

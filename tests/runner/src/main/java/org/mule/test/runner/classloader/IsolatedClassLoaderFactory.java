@@ -21,8 +21,10 @@ import static org.mule.runtime.container.internal.ContainerClassLoaderFactory.SY
 import static org.mule.runtime.core.api.config.MuleProperties.MULE_LOG_VERBOSE_CLASSLOADING;
 import static org.mule.runtime.deployment.model.internal.DefaultRegionPluginClassLoadersFactory.getArtifactPluginId;
 import static org.mule.runtime.module.artifact.api.classloader.ParentFirstLookupStrategy.PARENT_FIRST;
+import static org.mule.test.runner.RunnerConfiguration.TEST_RUNNER_ARTIFACT_ID;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.runtime.api.exception.MuleRuntimeException;
+import org.mule.runtime.container.api.ModuleRepository;
 import org.mule.runtime.container.api.MuleModule;
 import org.mule.runtime.container.internal.ContainerClassLoaderFactory;
 import org.mule.runtime.container.internal.ContainerClassLoaderFilterFactory;
@@ -242,9 +244,6 @@ public class IsolatedClassLoaderFactory {
     List<String> pluginDependencies =
         artifactsUrlClassification.getPluginUrlClassifications().stream().map(p -> p.getName()).collect(toList());
 
-    // Shared libs will be redundant on the test-runner 
-    artifactsUrlClassification.getApplicationUrls().removeAll(artifactsUrlClassification.getPluginSharedLibUrls());
-
     Set<String> exportedPackages = testJarInfo.getPackages();
     // TODO(pablo.kraan): runner - need to export every package from the test infrastructure
     exportedPackages.add("org.mule.tck");
@@ -278,7 +277,7 @@ public class IsolatedClassLoaderFactory {
 
 
     PluginUrlClassification testRunnerPluginClassification =
-        new PluginUrlClassification("test-runner", artifactsUrlClassification.getApplicationUrls(), emptyList(),
+        new PluginUrlClassification(TEST_RUNNER_ARTIFACT_ID, artifactsUrlClassification.getApplicationUrls(), emptyList(),
                                     pluginDependencies, exportedPackages,
                                     exportedResources, emptySet(), emptySet());
 
@@ -310,7 +309,7 @@ public class IsolatedClassLoaderFactory {
   }
 
   private ClassLoaderLookupPolicy extendLookupPolicyForPrivilegedAccess(ClassLoaderLookupPolicy childClassLoaderLookupPolicy,
-                                                                        DefaultModuleRepository moduleRepository,
+                                                                        ModuleRepository moduleRepository,
                                                                         TestContainerClassLoaderFactory testContainerClassLoaderFactory,
                                                                         PluginUrlClassification pluginUrlClassification) {
     ContainerOnlyLookupStrategy containerOnlyLookupStrategy =
@@ -333,10 +332,6 @@ public class IsolatedClassLoaderFactory {
   }
 
   private boolean hasPrivilegedApiAccess(PluginUrlClassification pluginUrlClassification, MuleModule module) {
-    // TODO(pablo.kraan): runner - fix this hack
-    if (pluginUrlClassification.getName().contains("test-runner")) {
-      return true;
-    }
     return module.getPrivilegedArtifacts().stream()
         .filter(artifact -> pluginUrlClassification.getName().startsWith(artifact + ":")).findFirst().isPresent();
   }
@@ -381,7 +376,7 @@ public class IsolatedClassLoaderFactory {
       testCodeUrl = artifactsUrlClassification.getApplicationUrls().get(1);
     }
     Set<String> productionPackages = getProductionCodePackages(testCodeUrl);
-    JarInfo testJarInfo = getTestCodePackages(artifactsUrlClassification, testCodeUrl);
+    JarInfo testJarInfo = getTestCodePackages(testCodeUrl);
 
     Set<String> testPackages = sanitizeTestExportedPackages(productionPackages, testJarInfo.getPackages());
 
@@ -411,9 +406,8 @@ public class IsolatedClassLoaderFactory {
     return sanitizedTestPackages;
   }
 
-  private JarInfo getTestCodePackages(ArtifactsUrlClassification artifactsUrlClassification, URL testCodeUrl) {
+  private JarInfo getTestCodePackages(URL testCodeUrl) {
     List<URL> libraries = newArrayList(testCodeUrl);
-    //libraries.addAll(artifactsUrlClassification.getPluginSharedLibUrls());
 
     Set<String> packages = new HashSet<>();
     Set<String> resources = new HashSet<>();

@@ -59,24 +59,24 @@ public class ArtifactIsolatedClassLoaderBuilder {
   private Set<String> providedExclusions = emptySet();
   private Set<String> testExclusions = emptySet();
   private Set<String> testInclusions = emptySet();
-  private Set<String> sharedPluginLibCoordinates = emptySet();
+  private Set<String> applicationSharedLibCoordinates = emptySet();
   private Set<String> applicationLibCoordinates = emptySet();
   private Set<String> extraPrivilegedArtifacts = emptySet();
   private Set<Class> exportPluginClasses = emptySet();
   private boolean extensionMetadataGenerationEnabled = false;
   private Set<String> providedInclusions = emptySet();
-  private List<URL> applicationUrls = newArrayList();
+  private List<URL> testRunnerPluginUrls = newArrayList();
   private List<String> extraBootPackages;
 
   /**
    * Sets the {@link Set} of Maven coordinates in format {@code <groupId>:<artifactId>} in order to be added to the sharedLib
    * {@link ArtifactClassLoader}
    *
-   * @param sharedPluginLibCoordinates {@link List} of Maven coordinates in format {@code <groupId>:<artifactId>}
+   * @param applicationSharedLibCoordinates {@link List} of Maven coordinates in format {@code <groupId>:<artifactId>}
    * @return this
    */
-  public ArtifactIsolatedClassLoaderBuilder setSharedPluginLibCoordinates(Set<String> sharedPluginLibCoordinates) {
-    this.sharedPluginLibCoordinates = sharedPluginLibCoordinates;
+  public ArtifactIsolatedClassLoaderBuilder setApplicationSharedLibCoordinates(Set<String> applicationSharedLibCoordinates) {
+    this.applicationSharedLibCoordinates = applicationSharedLibCoordinates;
     return this;
   }
 
@@ -242,8 +242,8 @@ public class ArtifactIsolatedClassLoaderBuilder {
    *        {@link ArtifactClassLoader} in addition to the ones classified.
    * @return this
    */
-  public ArtifactIsolatedClassLoaderBuilder setApplicationUrls(List<URL> applicationUrls) {
-    this.applicationUrls = applicationUrls;
+  public ArtifactIsolatedClassLoaderBuilder setTestRunnerPluginUrls(List<URL> testRunnerPluginUrls) {
+    this.testRunnerPluginUrls = testRunnerPluginUrls;
     return this;
   }
 
@@ -271,9 +271,9 @@ public class ArtifactIsolatedClassLoaderBuilder {
                                          providedExclusions,
                                          testExclusions,
                                          testInclusions,
-                                         sharedPluginLibCoordinates,
+                                         applicationSharedLibCoordinates,
                                          exportPluginClasses,
-                                         applicationUrls,
+                                         testRunnerPluginUrls,
                                          extensionMetadataGenerationEnabled,
                                          applicationLibCoordinates);
     } catch (IOException e) {
