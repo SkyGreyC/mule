@@ -47,6 +47,9 @@ public @interface ArtifactClassLoaderRunnerConfig {
    */
   String[] providedExclusions() default {};
 
+  // TODO(pablo.kraan): runner - add javadoc
+  String[] applicationRuntimeLibs() default {};
+
   /**
    * Runtime libraries in the format of {@code <groupId>:<artifactId>} to be added as shared libraries to
    * {@link ArtifactClassLoader}. These artifacts have to be declared as {@code test}

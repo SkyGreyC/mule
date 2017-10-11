@@ -242,6 +242,9 @@ public class IsolatedClassLoaderFactory {
     List<String> pluginDependencies =
         artifactsUrlClassification.getPluginUrlClassifications().stream().map(p -> p.getName()).collect(toList());
 
+    // Shared libs will be redundant on the test-runner 
+    artifactsUrlClassification.getApplicationUrls().removeAll(artifactsUrlClassification.getPluginSharedLibUrls());
+
     Set<String> exportedPackages = testJarInfo.getPackages();
     // TODO(pablo.kraan): runner - need to export every package from the test infrastructure
     exportedPackages.add("org.mule.tck");
@@ -567,12 +570,16 @@ public class IsolatedClassLoaderFactory {
                                                                      ClassLoaderLookupPolicy childClassLoaderLookupPolicy,
                                                                      ArtifactsUrlClassification artifactsUrlClassification,
                                                                      List<ArtifactClassLoader> pluginsArtifactClassLoaders) {
-    logClassLoaderUrls("APP", artifactsUrlClassification.getPluginSharedLibUrls());
+
+    List<URL> applicationUrls = new ArrayList<>();
+    applicationUrls.addAll(artifactsUrlClassification.getApplicationLibUrls());
+    applicationUrls.addAll(artifactsUrlClassification.getPluginSharedLibUrls());
+
+    logClassLoaderUrls("APP", applicationUrls);
     return new MuleApplicationClassLoader(APP_NAME, new ArtifactDescriptor(APP_NAME), parent,
                                           new DefaultNativeLibraryFinderFactory()
-                                              .create(APP_NAME, artifactsUrlClassification.getPluginSharedLibUrls()
-                                                  .toArray(new URL[pluginsArtifactClassLoaders.size()])),
-                                          artifactsUrlClassification.getPluginSharedLibUrls(),
+                                              .create(APP_NAME, applicationUrls.toArray(new URL[applicationUrls.size()])),
+                                          applicationUrls,
                                           childClassLoaderLookupPolicy, pluginsArtifactClassLoaders);
   }
 

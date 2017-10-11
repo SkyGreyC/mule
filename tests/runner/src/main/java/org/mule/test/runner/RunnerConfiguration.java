@@ -30,6 +30,7 @@ public class RunnerConfiguration {
   private static final String TEST_INCLUSIONS = "testInclusions";
   private static final String EXPORT_PLUGIN_CLASSES = "exportPluginClasses";
   private static final String SHARED_RUNTIME_LIBS = "sharedRuntimeLibs";
+  private static final String APPLICATION_RUNTIME_LIBS = "applicationRuntimeLibs";
   private static final String EXTRA_PRIVILEGED_ARTIFACTS = "extraPrivilegedArtifacts";
 
   private Set<String> providedExclusions;
@@ -37,6 +38,7 @@ public class RunnerConfiguration {
   private Set<String> testInclusions;
   private Set<Class> exportPluginClasses;
   private Set<String> sharedRuntimeLibs;
+  private Set<String> applicationRuntimeLibs;
   private Set<String> extraPrivilegedArtifacts;
 
   private String loadedFromTestClass;
@@ -55,6 +57,10 @@ public class RunnerConfiguration {
 
   public Set<String> getSharedRuntimeLibs() {
     return sharedRuntimeLibs;
+  }
+
+  public Set<String> getApplicationRuntimeLibs() {
+    return applicationRuntimeLibs;
   }
 
   public Set<String> getTestExclusions() {
@@ -86,6 +92,7 @@ public class RunnerConfiguration {
     runnerConfiguration.exportPluginClasses = new HashSet<>(readAttribute(EXPORT_PLUGIN_CLASSES, testClass));
 
     runnerConfiguration.sharedRuntimeLibs = new HashSet<>(readAttribute(SHARED_RUNTIME_LIBS, testClass));
+    runnerConfiguration.applicationRuntimeLibs = new HashSet<>(readAttribute(APPLICATION_RUNTIME_LIBS, testClass));
     runnerConfiguration.extraPrivilegedArtifacts = new HashSet<>(readAttribute(EXTRA_PRIVILEGED_ARTIFACTS, testClass));
 
     return runnerConfiguration;
@@ -129,6 +136,9 @@ public class RunnerConfiguration {
     if (!exportPluginClasses.equals(that.exportPluginClasses)) {
       return false;
     }
+    if (!applicationRuntimeLibs.equals(that.applicationRuntimeLibs)) {
+      return false;
+    }
     return sharedRuntimeLibs.equals(that.sharedRuntimeLibs);
   }
 
@@ -139,6 +149,7 @@ public class RunnerConfiguration {
     result = 31 * result + testInclusions.hashCode();
     result = 31 * result + exportPluginClasses.hashCode();
     result = 31 * result + sharedRuntimeLibs.hashCode();
+    result = 31 * result + applicationRuntimeLibs.hashCode();
     return result;
   }
 

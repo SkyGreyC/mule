@@ -140,10 +140,8 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
       checkConfiguration(clazz);
     }
 
-    // TODO(pablo.kraan): runner - isolated test class must be loaded from the plugin
     final Class<?> isolatedTestClass = getTestClass(clazz);
 
-    // TODO(pablo.kraan): runner - runner class must be loaded from the plugin
     final Class<? extends Annotation> runnerDelegateToClass = (Class<? extends Annotation>) artifactClassLoaderHolder
         .loadClassWithATestRunnerClassLoader(RunnerDelegateTo.class.getName());
 
@@ -205,6 +203,7 @@ public class ArtifactClassLoaderRunner extends Runner implements Filterable {
     builder.setExportPluginClasses(runnerConfiguration.getExportPluginClasses());
 
     builder.setSharedPluginLibCoordinates(runnerConfiguration.getSharedRuntimeLibs());
+    builder.setApplicationLibCoordinates(runnerConfiguration.getApplicationRuntimeLibs());
     builder.setExtensionMetadataGeneration(true);
 
     Properties excludedProperties;

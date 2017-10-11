@@ -60,6 +60,7 @@ public class ArtifactIsolatedClassLoaderBuilder {
   private Set<String> testExclusions = emptySet();
   private Set<String> testInclusions = emptySet();
   private Set<String> sharedPluginLibCoordinates = emptySet();
+  private Set<String> applicationLibCoordinates = emptySet();
   private Set<String> extraPrivilegedArtifacts = emptySet();
   private Set<Class> exportPluginClasses = emptySet();
   private boolean extensionMetadataGenerationEnabled = false;
@@ -76,6 +77,12 @@ public class ArtifactIsolatedClassLoaderBuilder {
    */
   public ArtifactIsolatedClassLoaderBuilder setSharedPluginLibCoordinates(Set<String> sharedPluginLibCoordinates) {
     this.sharedPluginLibCoordinates = sharedPluginLibCoordinates;
+    return this;
+  }
+
+  // TODO(pablo.kraan): runner - add javadoc
+  public ArtifactIsolatedClassLoaderBuilder setApplicationLibCoordinates(Set<String> applicationLibCoordinates) {
+    this.applicationLibCoordinates = applicationLibCoordinates;
     return this;
   }
 
@@ -267,7 +274,8 @@ public class ArtifactIsolatedClassLoaderBuilder {
                                          sharedPluginLibCoordinates,
                                          exportPluginClasses,
                                          applicationUrls,
-                                         extensionMetadataGenerationEnabled);
+                                         extensionMetadataGenerationEnabled,
+                                         applicationLibCoordinates);
     } catch (IOException e) {
       throw new RuntimeException("Error while creating the classification context", e);
     }

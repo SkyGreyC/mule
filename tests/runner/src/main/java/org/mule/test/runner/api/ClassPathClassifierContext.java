@@ -43,6 +43,7 @@ public class ClassPathClassifierContext {
   private final List<String> extraBootPackages = newArrayList();
 
   private final List<String> sharedPluginLibCoordinates = newArrayList();
+  private final List<String> applicationLibCoordinates = newArrayList();
   private final List<Class> exportPluginClasses = newArrayList();
   private final List<String> excludedArtifacts = newArrayList();
 
@@ -76,6 +77,7 @@ public class ClassPathClassifierContext {
    * @param extensionMetadataGenerationEnabled if while building the a plugin
    *        {@link ArtifactClassLoader} for an
    *        {@link org.mule.runtime.extension.api.annotation.Extension} the metadata should be generated.
+   * @param applicationLibCoordinates
    * @throws IOException if an error happened while reading {@link RunnerModuleUtils#EXCLUDED_PROPERTIES_FILE} file
    */
   public ClassPathClassifierContext(final Artifact rootArtifact,
@@ -89,7 +91,8 @@ public class ClassPathClassifierContext {
                                     final Set<String> sharedPluginLibCoordinates,
                                     final Set<Class> exportPluginClasses,
                                     final List<URL> applicationUrls,
-                                    final boolean extensionMetadataGenerationEnabled)
+                                    final boolean extensionMetadataGenerationEnabled,
+                                    Set<String> applicationLibCoordinates)
       throws IOException {
     checkNotNull(rootArtifact, "rootArtifact cannot be null");
     checkNotNull(classPathURLs, "classPathURLs cannot be null");
@@ -106,6 +109,7 @@ public class ClassPathClassifierContext {
     this.testExclusions.addAll(testExclusions);
     this.testInclusions.addAll(testInclusions);
 
+    this.applicationLibCoordinates.addAll(applicationLibCoordinates);
     this.sharedPluginLibCoordinates.addAll(sharedPluginLibCoordinates);
     this.exportPluginClasses.addAll(exportPluginClasses);
 
@@ -200,6 +204,11 @@ public class ClassPathClassifierContext {
    */
   public List<String> getSharedPluginLibCoordinates() {
     return this.sharedPluginLibCoordinates;
+  }
+
+  // TODO(pablo.kraan): runner - add javadoc
+  public List<String> getApplicationLibCoordinates() {
+    return this.applicationLibCoordinates;
   }
 
   /**

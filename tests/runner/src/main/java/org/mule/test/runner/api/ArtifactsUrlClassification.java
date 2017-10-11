@@ -25,35 +25,39 @@ public class ArtifactsUrlClassification {
   private final List<URL> pluginSharedLibUrls;
   private final List<PluginUrlClassification> pluginUrlClassifications;
   private final List<URL> applicationUrls;
+  private final List<URL> applicationLibUrls;
 
   /**
    * Creates a instance with the list of {@link URL}s classified in container, plugins and application.
-   *
-   * @param containerUrls list of {@link URL} that define the artifacts that would be loaded with the container
+   *  @param containerUrls list of {@link URL} that define the artifacts that would be loaded with the container
    *        {@link ClassLoader}. Not null.
    * @param serviceUrlClassifications for each plugin discovered a list of {@link ArtifactUrlClassification} that defines the
    *        artifact that would be loaded by the service {@link ClassLoader}. Not null.
    * @param pluginSharedLibUrls of {@link URL} that define the artifacts that would be loaded with the shareLib
-   *        {@link ClassLoader}
+  *        {@link ClassLoader}
    * @param pluginUrlClassifications for each plugin discovered a list of {@link PluginUrlClassification} that defines the
-   *        artifact that would be loaded by the plugin {@link ClassLoader}. Not null.
+  *        artifact that would be loaded by the plugin {@link ClassLoader}. Not null.
    * @param applicationUrls list of {@link URL} that define the artifacts that would be loaded with the application
-   *        {@link ClassLoader}. Not null.
+  *        {@link ClassLoader}. Not null.
+   * @param applicationLibUrls
    */
+  // TODO(pablo.kraan): runner - rename all the code that references applicationUrls to test-runner plugin URLs or similar
   public ArtifactsUrlClassification(List<URL> containerUrls, List<ArtifactUrlClassification> serviceUrlClassifications,
                                     List<URL> pluginSharedLibUrls, List<PluginUrlClassification> pluginUrlClassifications,
-                                    List<URL> applicationUrls) {
+                                    List<URL> applicationUrls, List<URL> applicationLibUrls) {
     checkNotNull(containerUrls, "containerUrls cannot be null");
     checkNotNull(serviceUrlClassifications, "serviceUrlClassifications cannot be null");
     checkNotNull(pluginSharedLibUrls, "pluginSharedLibUrls cannot be null");
     checkNotNull(pluginUrlClassifications, "pluginUrlClassifications cannot be null");
     checkNotNull(applicationUrls, "applicationUrls cannot be null");
+    checkNotNull(applicationLibUrls, "applicationLibUrls cannot be null");
 
     this.containerUrls = containerUrls;
     this.serviceUrlClassifications = serviceUrlClassifications;
     this.pluginSharedLibUrls = pluginSharedLibUrls;
     this.pluginUrlClassifications = pluginUrlClassifications;
     this.applicationUrls = applicationUrls;
+    this.applicationLibUrls = applicationLibUrls;
   }
 
   public List<URL> getContainerUrls() {
@@ -74,5 +78,9 @@ public class ArtifactsUrlClassification {
 
   public List<URL> getApplicationUrls() {
     return applicationUrls;
+  }
+
+  public List<URL> getApplicationLibUrls() {
+    return applicationLibUrls;
   }
 }
