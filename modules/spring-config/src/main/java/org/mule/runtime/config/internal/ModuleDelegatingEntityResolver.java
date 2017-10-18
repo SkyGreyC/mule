@@ -7,7 +7,6 @@
 package org.mule.runtime.config.internal;
 
 import static java.lang.String.format;
-import static java.lang.Thread.currentThread;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
@@ -60,7 +59,7 @@ public class ModuleDelegatingEntityResolver implements EntityResolver {
    *                   {@link #muleEntityResolver} delegates return null when resolving the entity.
    */
   public ModuleDelegatingEntityResolver(Set<ExtensionModel> extensions) {
-    ClassLoader classLoader = currentThread().getContextClassLoader();
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     this.muleEntityResolver = new MuleCustomEntityResolver(classLoader);
     this.extensions = extensions;
     this.checkedEntities = new HashMap<>();
@@ -91,7 +90,15 @@ public class ModuleDelegatingEntityResolver implements EntityResolver {
                           systemId));
     }
 
-    systemId = overrideSystemIdForCompatibility(publicId, systemId);
+    Boolean useDeprecated = muleEntityResolver
+        .resolveEntity(publicId, "http://www.mulesoft.org/schema/mule/core/current/mule-core-deprecated.xsd") != null;
+    if (systemId.equals("http://www.mulesoft.org/schema/mule/core/current/mule.xsd")) {
+      if (useDeprecated) {
+        systemId = "http://www.mulesoft.org/schema/mule/core/current/mule-core-deprecated.xsd";
+      } else {
+        systemId = "http://www.mulesoft.org/schema/mule/core/current/mule-core.xsd";
+      }
+    }
 
     InputSource inputSource;
     inputSource = muleEntityResolver.resolveEntity(publicId, systemId);
@@ -109,34 +116,6 @@ public class ModuleDelegatingEntityResolver implements EntityResolver {
       }
     }
     return inputSource;
-  }
-
-  private String overrideSystemIdForCompatibility(String publicId, String systemId) throws SAXException, IOException {
-    final String CORE_XSD = "http://www.mulesoft.org/schema/mule/core/current/mule.xsd";
-    final String CORE_CURRENT_XSD = "http://www.mulesoft.org/schema/mule/core/current/mule-core.xsd";
-    final String CORE_DEPRECATED_XSD = "http://www.mulesoft.org/schema/mule/core/current/mule-core-deprecated.xsd";
-    final String COMPATIBILITY_XSD = "http://www.mulesoft.org/schema/mule/compatibility/current/mule-compatibility.xsd";
-
-    if (systemId.equals(CORE_XSD)) {
-      Boolean useDeprecated = muleEntityResolver.resolveEntity(publicId, CORE_DEPRECATED_XSD) != null;
-      Boolean usingCompatibility = muleEntityResolver.resolveEntity(publicId, COMPATIBILITY_XSD) != null;
-      Boolean runningTests = false;
-
-      try {
-        Class.forName("org.mule.tck.junit4.AbstractMuleTestCase", true, currentThread().getContextClassLoader());
-        runningTests = true;
-      } catch (ClassNotFoundException e) {
-
-      }
-
-      if (useDeprecated && (usingCompatibility || runningTests)) {
-        return CORE_DEPRECATED_XSD;
-      } else {
-        return CORE_CURRENT_XSD;
-      }
-    }
-
-    return systemId;
   }
 
   private InputSource generateFromExtensions(String publicId, String systemId) {
