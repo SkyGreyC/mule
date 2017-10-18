@@ -15,10 +15,10 @@ import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentT
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.SCOPE;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.SOURCE;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.UNKNOWN;
-import static org.mule.runtime.config.api.dsl.model.ApplicationModel.FLOW_IDENTIFIER;
-import static org.mule.runtime.config.api.dsl.model.ApplicationModel.MODULE_OPERATION_CHAIN;
-import static org.mule.runtime.config.api.dsl.model.ApplicationModel.ON_ERROR_CONTINE_IDENTIFIER;
-import static org.mule.runtime.config.api.dsl.model.ApplicationModel.ON_ERROR_PROPAGATE_IDENTIFIER;
+import static org.mule.runtime.config.internal.model.ApplicationModel.FLOW_IDENTIFIER;
+import static org.mule.runtime.config.internal.model.ApplicationModel.MODULE_OPERATION_CHAIN;
+import static org.mule.runtime.config.internal.model.ApplicationModel.ON_ERROR_CONTINE_IDENTIFIER;
+import static org.mule.runtime.config.internal.model.ApplicationModel.ON_ERROR_PROPAGATE_IDENTIFIER;
 import org.mule.runtime.api.component.Component;
 import org.mule.runtime.api.component.TypedComponentIdentifier;
 import org.mule.runtime.api.meta.model.ComponentModelVisitor;
@@ -31,7 +31,7 @@ import org.mule.runtime.api.meta.model.operation.OperationModel;
 import org.mule.runtime.api.meta.model.source.SourceModel;
 import org.mule.runtime.api.meta.model.stereotype.StereotypeModel;
 import org.mule.runtime.api.util.Reference;
-import org.mule.runtime.config.api.dsl.model.ComponentModel;
+import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.config.api.dsl.model.DslElementModel;
 import org.mule.runtime.config.internal.dsl.model.ComponentLocationVisitor;
 import org.mule.runtime.config.internal.dsl.model.ExtensionModelHelper;
@@ -41,7 +41,6 @@ import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.source.MessageSource;
 import org.mule.runtime.core.internal.exception.ErrorHandler;
 import org.mule.runtime.core.internal.exception.TemplateOnErrorHandler;
-import org.mule.runtime.core.internal.processor.chain.ModuleOperationMessageProcessorChainBuilder;
 import org.mule.runtime.core.internal.routing.AbstractSelectiveRouter;
 import org.mule.runtime.core.privileged.processor.Router;
 import org.mule.runtime.extension.api.stereotype.MuleStereotypes;
@@ -69,77 +68,12 @@ public class ComponentModelHelper {
     if (componentModel.getIdentifier().equals(MODULE_OPERATION_CHAIN)) {
       return OPERATION;
     }
-    Optional<DslElementModel<Object>> elementModelOptional = extensionModelHelper.findDslElementModel(componentModel);
     if (componentModel.getIdentifier().equals(ON_ERROR_CONTINE_IDENTIFIER)
         || componentModel.getIdentifier().equals(ON_ERROR_PROPAGATE_IDENTIFIER)) {
       return ON_ERROR;
     }
-    return elementModelOptional.map(elementModel -> {
-      Object model = elementModel.getModel();
-      Reference<TypedComponentIdentifier.ComponentType> typeReference = new Reference<>(UNKNOWN);
-      if (model instanceof org.mule.runtime.api.meta.model.ComponentModel) {
-        ((org.mule.runtime.api.meta.model.ComponentModel) model).accept(new ComponentModelVisitor() {
-
-          @Override
-          public void visit(OperationModel model) {
-            typeReference.set(OPERATION);
-          }
-
-          @Override
-          public void visit(SourceModel model) {
-            typeReference.set(SOURCE);
-          }
-
-          @Override
-          public void visit(ConstructModel model) {
-            StereotypeModel stereotype = model.getStereotype();
-            if (stereotype.equals(MuleStereotypes.ERROR_HANDLER)) {
-              typeReference.set(TypedComponentIdentifier.ComponentType.ERROR_HANDLER);
-              return;
-            } else if (stereotype.equals(MuleStereotypes.FLOW)) {
-              typeReference.set(TypedComponentIdentifier.ComponentType.FLOW);
-              return;
-            } else if (stereotype.equals(SOURCE)) {
-              typeReference.set(TypedComponentIdentifier.ComponentType.SOURCE);
-              return;
-            }
-            model.getNestedComponents()
-                .forEach(nestedElementModel -> nestedElementModel.accept(new NestedComponentVisitor(typeReference)));
-
-            if (typeReference.get() == null && stereotype.equals(MuleStereotypes.PROCESSOR)) {
-              typeReference.set(OPERATION);
-            }
-          }
-        });
-      }
-      return typeReference.get();
-    }).orElse(UNKNOWN);
+    return extensionModelHelper.findComponentType(componentModel);
   }
-
-  static class NestedComponentVisitor implements NestableElementModelVisitor {
-
-    private Reference<TypedComponentIdentifier.ComponentType> reference;
-
-    public NestedComponentVisitor(Reference<TypedComponentIdentifier.ComponentType> reference) {
-      this.reference = reference;
-    }
-
-    @Override
-    public void visit(NestedComponentModel component) {
-
-    }
-
-    @Override
-    public void visit(NestedChainModel component) {
-      reference.set(SCOPE);
-    }
-
-    @Override
-    public void visit(NestedRouteModel component) {
-      reference.set(ROUTER);
-    }
-  }
-
 
   public static boolean isAnnotatedObject(ComponentModel componentModel) {
     return isOfType(componentModel, Component.class);
@@ -188,7 +122,7 @@ public class ComponentModelHelper {
 
   public static void updateAnnotationValue(QName annotationKey, Object annotationValue, BeanDefinition beanDefinition) {
     PropertyValue propertyValue =
-        beanDefinition.getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
+            beanDefinition.getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
     Map<QName, Object> annotations;
     if (propertyValue == null) {
       annotations = new HashMap<>();
@@ -205,7 +139,7 @@ public class ComponentModelHelper {
       return empty();
     }
     PropertyValue propertyValue =
-        componentModel.getBeanDefinition().getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
+            componentModel.getBeanDefinition().getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
     Map<QName, Object> annotations;
     if (propertyValue == null) {
       return empty();
@@ -217,7 +151,7 @@ public class ComponentModelHelper {
 
   public static boolean isRouter(ComponentModel componentModel) {
     return isOfType(componentModel, Router.class) || isOfType(componentModel, AbstractSelectiveRouter.class)
-        || ComponentLocationVisitor.BATCH_JOB_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier())
-        || ComponentLocationVisitor.BATCH_PROCESSS_RECORDS_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier());
+           || ComponentLocationVisitor.BATCH_JOB_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier())
+           || ComponentLocationVisitor.BATCH_PROCESSS_RECORDS_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier());
   }
 }
