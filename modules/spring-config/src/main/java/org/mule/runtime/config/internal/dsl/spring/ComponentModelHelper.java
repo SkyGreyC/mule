@@ -9,33 +9,21 @@ package org.mule.runtime.config.internal.dsl.spring;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.mule.runtime.api.component.Component.ANNOTATIONS_PROPERTY_NAME;
+import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.ERROR_HANDLER;
+import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.FLOW;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.ON_ERROR;
 import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.OPERATION;
-import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.ROUTER;
-import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.SCOPE;
-import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.SOURCE;
-import static org.mule.runtime.api.component.TypedComponentIdentifier.ComponentType.UNKNOWN;
+import static org.mule.runtime.config.internal.model.ApplicationModel.ERROR_HANDLER_IDENTIFIER;
 import static org.mule.runtime.config.internal.model.ApplicationModel.FLOW_IDENTIFIER;
 import static org.mule.runtime.config.internal.model.ApplicationModel.MODULE_OPERATION_CHAIN;
 import static org.mule.runtime.config.internal.model.ApplicationModel.ON_ERROR_CONTINE_IDENTIFIER;
 import static org.mule.runtime.config.internal.model.ApplicationModel.ON_ERROR_PROPAGATE_IDENTIFIER;
 import org.mule.runtime.api.component.Component;
 import org.mule.runtime.api.component.TypedComponentIdentifier;
-import org.mule.runtime.api.meta.model.ComponentModelVisitor;
-import org.mule.runtime.api.meta.model.construct.ConstructModel;
-import org.mule.runtime.api.meta.model.nested.NestableElementModelVisitor;
-import org.mule.runtime.api.meta.model.nested.NestedChainModel;
-import org.mule.runtime.api.meta.model.nested.NestedComponentModel;
-import org.mule.runtime.api.meta.model.nested.NestedRouteModel;
-import org.mule.runtime.api.meta.model.operation.OperationModel;
-import org.mule.runtime.api.meta.model.source.SourceModel;
-import org.mule.runtime.api.meta.model.stereotype.StereotypeModel;
-import org.mule.runtime.api.util.Reference;
-import org.mule.runtime.config.internal.model.ComponentModel;
-import org.mule.runtime.config.api.dsl.model.DslElementModel;
 import org.mule.runtime.config.internal.dsl.model.ComponentLocationVisitor;
 import org.mule.runtime.config.internal.dsl.model.ExtensionModelHelper;
 import org.mule.runtime.config.internal.dsl.model.SpringComponentModel;
+import org.mule.runtime.config.internal.model.ComponentModel;
 import org.mule.runtime.core.api.processor.InterceptingMessageProcessor;
 import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.source.MessageSource;
@@ -43,7 +31,6 @@ import org.mule.runtime.core.internal.exception.ErrorHandler;
 import org.mule.runtime.core.internal.exception.TemplateOnErrorHandler;
 import org.mule.runtime.core.internal.routing.AbstractSelectiveRouter;
 import org.mule.runtime.core.privileged.processor.Router;
-import org.mule.runtime.extension.api.stereotype.MuleStereotypes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,6 +54,12 @@ public class ComponentModelHelper {
                                                                             ExtensionModelHelper extensionModelHelper) {
     if (componentModel.getIdentifier().equals(MODULE_OPERATION_CHAIN)) {
       return OPERATION;
+    }
+    if (componentModel.getIdentifier().equals(FLOW_IDENTIFIER)) {
+      return FLOW;
+    }
+    if (componentModel.getIdentifier().equals(ERROR_HANDLER_IDENTIFIER)) {
+      return ERROR_HANDLER;
     }
     if (componentModel.getIdentifier().equals(ON_ERROR_CONTINE_IDENTIFIER)
         || componentModel.getIdentifier().equals(ON_ERROR_PROPAGATE_IDENTIFIER)) {
@@ -122,7 +115,7 @@ public class ComponentModelHelper {
 
   public static void updateAnnotationValue(QName annotationKey, Object annotationValue, BeanDefinition beanDefinition) {
     PropertyValue propertyValue =
-            beanDefinition.getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
+        beanDefinition.getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
     Map<QName, Object> annotations;
     if (propertyValue == null) {
       annotations = new HashMap<>();
@@ -139,7 +132,7 @@ public class ComponentModelHelper {
       return empty();
     }
     PropertyValue propertyValue =
-            componentModel.getBeanDefinition().getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
+        componentModel.getBeanDefinition().getPropertyValues().getPropertyValue(ANNOTATIONS_PROPERTY_NAME);
     Map<QName, Object> annotations;
     if (propertyValue == null) {
       return empty();
@@ -151,7 +144,7 @@ public class ComponentModelHelper {
 
   public static boolean isRouter(ComponentModel componentModel) {
     return isOfType(componentModel, Router.class) || isOfType(componentModel, AbstractSelectiveRouter.class)
-           || ComponentLocationVisitor.BATCH_JOB_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier())
-           || ComponentLocationVisitor.BATCH_PROCESSS_RECORDS_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier());
+        || ComponentLocationVisitor.BATCH_JOB_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier())
+        || ComponentLocationVisitor.BATCH_PROCESSS_RECORDS_COMPONENT_IDENTIFIER.equals(componentModel.getIdentifier());
   }
 }

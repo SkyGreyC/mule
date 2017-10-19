@@ -71,7 +71,7 @@ public class ExtensionModelHelper {
     Reference<TypedComponentIdentifier.ComponentType> componentTypeReference = new Reference<>();
     resolveComponentName(componentModel.getIdentifier().getName());
     for (ExtensionModel extensionsModel : extensionsModels) {
-      if (extensionsModel.getXmlDslModel().getNamespace().equals(componentModel.getIdentifier().getNamespace())) {
+      if (extensionsModel.getXmlDslModel().getPrefix().equals(componentModel.getIdentifier().getNamespace())) {
         new ExtensionWalker() {
 
           @Override
@@ -125,8 +125,7 @@ public class ExtensionModelHelper {
 
           @Override
           protected void onParameter(ParameterizedModel owner, ParameterGroupModel groupModel, ParameterModel model) {
-            componentTypeReference.set(UNKNOWN);
-            stop();
+            return;
           }
         }.walk(extensionsModel);
       }
