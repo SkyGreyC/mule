@@ -74,7 +74,7 @@ public class KeyBasedEncryptionStrategy extends AbstractNamedEncryptionStrategy
         {
             PGPCryptInfo pgpCryptInfo = this.safeGetCryptInfo(cryptInfo);
             PGPPublicKey publicKey = pgpCryptInfo.getPublicKey();
-            return new EncryptStreamTransformer(publicKey, provider, encryptionAlgorithmId, pgpOutputMode).process(data);
+            return new EncryptStreamTransformer(publicKey, provider, encryptionAlgorithmId, pgpOutputMode, getName()).process(data);
         }
         catch (Exception e)
         {
